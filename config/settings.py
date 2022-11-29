@@ -11,21 +11,31 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# .envから、設定を読み込み
+env = environ.Env()
+root = environ.Path(BASE_DIR / "secrets")
+
+# 本番環境用のenvファイル(.env.production) を読み込む例
+# env.read_env(root(".env.production"))
+
+# ローカル環境のenvファイル(.env.local) を読み込み
+env.read_env(root(".env.local"))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-&x-bfkvu*!navxqd=@9e)hl93!0wk$m7i-&hvg-@z^8fs#mls-"
+SECRET_KEY = env.str("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool("DEBUG")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
 
 # Application definition
