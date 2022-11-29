@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "django-training003"
+version = "0.1.0"
+description = ""
+authors = ["yugo uchiida <y.uchiida@nirneege.com>"]
+readme = "README.md"
+packages = [{include = "django_training003"}]
+
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "3.2"
+django-stubs-ext = "^0.7.0"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+flake8 = "^6.0.0"
+mypy = "^0.991"
+djlint = "^1.19.7"
+django-stubs = "^1.13.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+target-version = ['py311']
+line-length = 120
+
