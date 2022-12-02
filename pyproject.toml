@@ -13,6 +13,7 @@ django = "3.2"
 django-stubs-ext = "^0.7.0"
 django-environ = "^0.9.0"
 pillow = "^9.3.0"
+stripe = "^5.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
