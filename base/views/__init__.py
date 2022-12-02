@@ -1,3 +1,3 @@
-from .item import IndexListView
+from .item import IndexListView, ItemDetailView
 
-__all__ = ["IndexListView"]
+__all__ = ["IndexListView", "ItemDetailView"]
