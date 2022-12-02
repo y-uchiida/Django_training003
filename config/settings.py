@@ -146,3 +146,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # 消費税率
 TAX_RATE = 0.1
+
+# Stripe 用の設定項目
+STRIPE_API_SECRET_KEY = env.str("STRIPE_API_SECRET_KEY")
+MY_URL = env.str("MY_URL")
