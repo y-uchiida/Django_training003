@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import environ
 
+from django.contrib import messages
+
 # mypy エラーを回避するための拡張を追加
 import django_stubs_ext
 
@@ -162,3 +164,12 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_URL = "/logout/"
 
 LOGOUT_REDIRECT_URL = "/login/"
+
+# messages 表示に利用するクラス
+MESSAGE_TAGS = {
+    messages.ERROR: "rounded-0 alert alert-danger",
+    messages.WARNING: "rounded-0 alert alert-warning",
+    messages.SUCCESS: "rounded-0 alert alert-success",
+    messages.INFO: "rounded-0 alert alert-info",
+    messages.DEBUG: "rounded-0 alert alert-secondary",
+}

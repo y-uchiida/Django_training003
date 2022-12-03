@@ -1,6 +1,7 @@
 from django.shortcuts import redirect
 from django.views.generic import View, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 from django.conf import settings
 from django.core import serializers
 from base.models import Item, Order
@@ -93,10 +94,12 @@ class PayWithStripe(LoginRequiredMixin, View):
 
         # プロフィールが埋まっているかどうか確認
         if not check_profile_filled(request.user.profile):
+            messages.error(self.request, "商品配送のため、プロフィールを入力してください。")
             return redirect("/profile/")
 
         cart = request.session.get("cart", None)
         if cart is None or len(cart) == 0:
+            messages.error(self.request, "カートが空です。")
             return redirect("/")
 
         # Order オブジェクトに保持するJSONデータ
