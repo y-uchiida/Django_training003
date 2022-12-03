@@ -80,6 +80,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # アプリ内で独自追加しているコンテキストプロセッサー
+                "config.custom_context_processors.base",
             ],
         },
     },
@@ -173,3 +175,6 @@ MESSAGE_TAGS = {
     messages.INFO: "rounded-0 alert alert-info",
     messages.DEBUG: "rounded-0 alert alert-secondary",
 }
+
+# custom_context_processors
+TITLE = "Vegeket"
