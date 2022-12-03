@@ -32,5 +32,7 @@ urlpatterns = [
     path("pay/checkout/", views.PayWithStripe.as_view()),
     path("pay/success/", views.PaySuccessView.as_view()),
     path("pay/cancel/", views.PayCancelView.as_view()),
+    path("orders/<str:pk>/", views.OrderDetailView.as_view()),
+    path("orders/", views.OrderIndexView.as_view()),
     path("", views.IndexListView.as_view(), name="index"),
 ]

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.db import models
-from base.models import Item, Category, Tag, User, Profile
+from base.models import Item, Category, Tag, User, Profile, Order
 from .forms import UserCreationForm
 from django.contrib.auth.models import Group
 
@@ -78,6 +78,7 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(Item)
 admin.site.register(Category)
 admin.site.register(Tag)
+admin.site.register(Order)
 admin.site.register(User, CustomUserAdmin)
 
 # デフォルトで設定されているGroup モデルを非表示

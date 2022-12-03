@@ -2,8 +2,10 @@ from django.shortcuts import redirect
 from django.views.generic import View, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
-from base.models import Item
+from django.core import serializers
+from base.models import Item, Order
 import stripe
+import json
 
 stripe.api_key = settings.STRIPE_API_SECRET_KEY
 
@@ -13,9 +15,12 @@ class PaySuccessView(LoginRequiredMixin, TemplateView):
     template_name = "pages/success.html"
 
     def get(self, request, *args, **kwargs):
-        # Todo: 最新のOrderオブジェクトを取得し、注文確定に変更
+        # 最新のOrderオブジェクトを取得し、注文確定に変更
+        order = Order.objects.filter(user=request.user).order_by("-created_at")[0]
+        order.is_confirmed = True  # 注文確定
+        order.save()
 
-        # カート情報削除
+        # 注文処理が完了したので、カートを空に戻す
         del request.session["cart"]
 
         return super().get(request, *args, **kwargs)
@@ -26,11 +31,19 @@ class PayCancelView(LoginRequiredMixin, TemplateView):
     template_name = "pages/cancel.html"
 
     def get(self, request, *args, **kwargs):
-        # Todo: 最新のOrderオブジェクトを取得
+        # 最新のOrderオブジェクト(= キャンセルされた注文)を取得
+        order = Order.objects.filter(user=request.user).order_by("-created_at")[0]
 
-        # Todo: 在庫数と販売数を元の状態に戻す
+        # 在庫数と販売数を元の状態に戻す
+        for elem in json.loads(order.items):
+            item = Item.objects.get(pk=elem["pk"])
+            item.sold_count -= elem["quantity"]
+            item.stock += elem["quantity"]
+            item.save()
 
-        # Todo: is_confirmedがFalseであれば削除（仮オーダー削除）
+        # Todo: is_confirmed がFalse であれば（仮注文なので）Order レコードを削除
+        if not order.is_confirmed:
+            order.delete()
 
         return super().get(request, *args, **kwargs)
 
@@ -86,14 +99,48 @@ class PayWithStripe(LoginRequiredMixin, View):
         if cart is None or len(cart) == 0:
             return redirect("/")
 
+        # Order オブジェクトに保持するJSONデータ
+        ordered_items = []
+
+        # Stripe で処理するオブジェクトデータ
         line_items = []
+
         for item_pk, quantity in cart["items"].items():
             item = Item.objects.get(pk=item_pk)
             line_item = create_line_item(item.price, item.name, quantity)  # type: ignore
             line_items.append(line_item)
 
+            # Order モデルのitems フィールドに持たせるJSONデータ用
+            ordered_items.append(
+                {
+                    "pk": str(item.pk),
+                    "name": item.name,
+                    "image": str(item.image),
+                    "price": item.price,
+                    "quantity": quantity,
+                }
+            )
+
+            # 注文数超過を防ぐため、在庫をこの時点で引いておく
+            # また、在庫数の不整合が起きないように販売数も加算しておく
+            # 注文キャンセルの場合は在庫と販売数を戻す
+            item.stock -= quantity
+            item.sold_count += quantity
+            item.save()
+
+        # 仮注文情報として、Order レコードを作成
+        # 決済が完了していないので、is_confirmed は False にしておく
+        Order.objects.create(
+            user=request.user,
+            uid=request.user.pk,
+            items=json.dumps(ordered_items),
+            shipping=serializers.serialize("json", [request.user.profile]),
+            amount=cart["total"],
+            tax_included=cart["tax_included_total"],
+        )
+
         checkout_session = stripe.checkout.Session.create(
-            # customer_email=request.user.email,
+            customer_email=request.user.email,
             payment_method_types=["card"],
             line_items=line_items,
             mode="payment",
