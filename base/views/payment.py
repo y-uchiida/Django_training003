@@ -16,10 +16,31 @@ class PaySuccessView(LoginRequiredMixin, TemplateView):
     template_name = "pages/success.html"
 
     def get(self, request, *args, **kwargs):
-        # 最新のOrderオブジェクトを取得し、注文確定に変更
-        order = Order.objects.filter(user=request.user).order_by("-created_at")[0]
+        # checkout_sessionで渡したクエリを取得
+        order_id = request.GET.get("order_id")
+
+        # idと現userでOrderオブジェクトのリストを取得
+        orders = Order.objects.filter(user=request.user, id=order_id)
+
+        # もし要素数が1でなければ、注文情報がない状態でアクセスしているので想定外の操作
+        if len(orders) != 1:
+            messages.error(self.request, "処理できない決済が試行されました。")
+            return redirect("/cart/")
+
+        # １つの要素を変数へ代入
+        order = orders[0]
+
+        # 既にis_confirmed=Trueなら以降に進まないようにここでreturn
+        if order.is_confirmed:
+            messages.error(self.request, "処理できない決済が試行されました。")
+            return redirect("/cart/")
+
         order.is_confirmed = True  # 注文確定
         order.save()
+
+        # カート情報削除
+        if "cart" in request.session:
+            del request.session["cart"]
 
         # 注文処理が完了したので、カートを空に戻す
         del request.session["cart"]
@@ -32,8 +53,19 @@ class PayCancelView(LoginRequiredMixin, TemplateView):
     template_name = "pages/cancel.html"
 
     def get(self, request, *args, **kwargs):
-        # 最新のOrderオブジェクト(= キャンセルされた注文)を取得
-        order = Order.objects.filter(user=request.user).order_by("-created_at")[0]
+        # checkout_sessionで渡したクエリを取得
+        order_id = request.GET.get("order_id")
+
+        # idと現userでOrderオブジェクトのリストを取得
+        orders = Order.objects.filter(user=request.user, id=order_id)
+
+        # もし要素数が1でなければ以降に進まないようにここでreturn
+        if len(orders) != 1:
+            messages.error(self.request, "処理できない決済が試行されました。")
+            return redirect("/cart/")
+
+        # １つの要素を変数へ代入
+        order = orders[0]
 
         # 在庫数と販売数を元の状態に戻す
         for elem in json.loads(order.items):
@@ -133,7 +165,7 @@ class PayWithStripe(LoginRequiredMixin, View):
 
         # 仮注文情報として、Order レコードを作成
         # 決済が完了していないので、is_confirmed は False にしておく
-        Order.objects.create(
+        order = Order.objects.create(
             user=request.user,
             uid=request.user.pk,
             items=json.dumps(ordered_items),
@@ -147,7 +179,8 @@ class PayWithStripe(LoginRequiredMixin, View):
             payment_method_types=["card"],
             line_items=line_items,
             mode="payment",
-            success_url=f"{settings.MY_URL}/pay/success/",
-            cancel_url=f"{settings.MY_URL}/pay/cancel/",
+            # success_urlとcancel_urlには、クエリで注文IDを渡しておく
+            success_url=f"{settings.MY_URL}/pay/success/?order_id={order.pk}",
+            cancel_url=f"{settings.MY_URL}/pay/cancel/?order_id={order.pk}",
         )
         return redirect(checkout_session.url)
