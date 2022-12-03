@@ -51,4 +51,17 @@
       {% endfor %}
     </div>
   </div>
+
+{# ブラウザの戻るボタンでStripeの画面から戻ってきた場合の対策 #}
+<script>
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (document.visibilityState === "visible") {
+        window.location = "/pay/cancel/";
+      }
+    },
+    false
+  );
+</script>
 {% endblock main %}
