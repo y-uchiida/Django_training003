@@ -1,5 +1,6 @@
 from django.shortcuts import redirect
 from django.views.generic import View, TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
 from base.models import Item
 import stripe
@@ -8,7 +9,7 @@ stripe.api_key = settings.STRIPE_API_SECRET_KEY
 
 
 # 決済が成功したときの処理
-class PaySuccessView(TemplateView):
+class PaySuccessView(LoginRequiredMixin, TemplateView):
     template_name = "pages/success.html"
 
     def get(self, request, *args, **kwargs):
@@ -21,7 +22,7 @@ class PaySuccessView(TemplateView):
 
 
 # 決済がキャンセルされたときの処理
-class PayCancelView(TemplateView):
+class PayCancelView(LoginRequiredMixin, TemplateView):
     template_name = "pages/cancel.html"
 
     def get(self, request, *args, **kwargs):
@@ -59,9 +60,28 @@ def create_line_item(unit_amount, name, quantity):
     }
 
 
+def check_profile_filled(profile) -> bool:
+    if profile.name is None or profile.name == "":
+        return False
+    elif profile.zipcode is None or profile.zipcode == "":
+        return False
+    elif profile.prefecture is None or profile.prefecture == "":
+        return False
+    elif profile.city is None or profile.city == "":
+        return False
+    elif profile.address1 is None or profile.address1 == "":
+        return False
+    return True
+
+
 # Stripe パッケージの機能を利用して、決済を処理する
-class PayWithStripe(View):
+class PayWithStripe(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
+
+        # プロフィールが埋まっているかどうか確認
+        if not check_profile_filled(request.user.profile):
+            return redirect("/profile/")
+
         cart = request.session.get("cart", None)
         if cart is None or len(cart) == 0:
             return redirect("/")

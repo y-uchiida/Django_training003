@@ -2,11 +2,13 @@ from django.shortcuts import redirect
 from django.conf import settings
 from django.views.generic import View, ListView
 from django.db.models.query import QuerySet
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from base.models import Item
 from collections import OrderedDict
 
 
-class CartListView(ListView[Item]):
+class CartListView(ListView[LoginRequiredMixin, Item]):
     model = Item
     template_name = "pages/cart.html"
 
@@ -46,7 +48,7 @@ class CartListView(ListView[Item]):
         return context
 
 
-class AddCartView(View):
+class AddCartView(LoginRequiredMixin, View):
     def post(self, request):
         item_pk = request.POST.get("item_pk")
         quantity = int(request.POST.get("quantity"))
@@ -69,6 +71,7 @@ class AddCartView(View):
 
 
 # カートから商品を削除する
+@login_required
 def remove_from_cart(request, pk):
     cart = request.session.get("cart", None)
     if cart is not None:

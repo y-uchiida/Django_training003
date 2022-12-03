@@ -1,3 +1,11 @@
 from .item import Item, Category, Tag
+from .account import User, UserManager, Profile
 
-__all__ = ["Item", "Category", "Tag"]
+__all__ = [
+    "Item",
+    "Category",
+    "Tag",
+    "User",
+    "UserManager",
+    "Profile",
+]
